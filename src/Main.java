@@ -2,7 +2,7 @@ import java.util.Scanner;
 import java.util.TreeMap;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ScannerException {
         System.out.println("Внимание! Калькулятор принимает цифры от 1 до 10 включительно ");
         System.out.println("выполняет операции сложения, вычитания, умножения и деления с двумя числами: ");
         System.out.print("Введите выражение: ");
@@ -23,9 +23,9 @@ public class Main {
         }
         //Проверка количеситва  арифметического знака
         if (plusCount >= 2 || minusCount >= 2 || asteriskCount >= 2 || slashCount >= 2) {
-            System.out.println("Некорректное выражение,формат математической операции не удовлетворяет заданию -  допускается один оператор (+, -, /, *)");
-            return;
+            throw new ScannerException("Некорректное выражение,формат математической операции не удовлетворяет заданию -  допускается один оператор (+, -, /, *)");
         }
+
         String sign = null;
         if (plusCount == 1) {
             sign = "+";
@@ -44,14 +44,15 @@ public class Main {
                 break;
             }
         }
+
         if (actionIndex == -1) {
-            System.out.println("Некорректное выражение, строка не является математической операцией");
-            return;
+            throw new ScannerException("Некорректное выражение, строка не является математической операцией");
         }
         String[] regexActions = {"\\+", "-", "/", "\\*"};
         assert sign != null;
         String[] data = exp.split(regexActions[actionIndex]);
         Converter converter = new Converter();
+        Calculator calculator = new Calculator();
         //Определяем, находятся ли числа в одном формате (оба римские или оба арабские)
         if (converter.isRoman(data[0]) == converter.isRoman(data[1])) {
             int a, b;
@@ -67,15 +68,10 @@ public class Main {
                 b = Integer.parseInt(data[1]);
             }
             if ((a <= 10) && (b <= 10)) {
-                int result = switch (sign) {
-                    case "+" -> a + b;
-                    case "-" -> a - b;
-                    case "*" -> a * b;
-                    default -> a / b;
-                };
+                int result = calculator.calc(a, sign, b);
                 if (isRoman) {
                     if (result <= 0) {
-                        System.out.println("В римской системе нет отрицательных чисел");
+                        throw new ScannerException("В римской системе нет отрицательных чисел");
                     } else{
                         System.out.println(converter.intToRoman(result));
                     }
@@ -83,11 +79,27 @@ public class Main {
                     System.out.println(result);
                 }
             } else {
-                System.out.println("Некорректный ввод. Введите число от 1 до 10.");
+                //System.out.println("Некорректный ввод. Введите число от 1 до 10.");
+                throw new ScannerException("Некорректный ввод. Введите число от 1 до 10.");
             }
         } else {
-            System.out.println("Используются одновременно разные системы счисления");
+            throw new ScannerException("Используются одновременно разные системы счисления");
         }
+    }
+}
+class Calculator {
+    int calc(int a, String s, int b) {
+        return switch (s) {
+            case "+" -> a + b;
+            case "-" -> a - b;
+            case "*" -> a * b;
+            default -> a / b;
+        };
+    }
+}
+class ScannerException extends Exception{
+    ScannerException(String description) {
+        super(description);
     }
 }
 class Converter {
@@ -97,6 +109,10 @@ class Converter {
         romanKeyMap.put('I', 1);
         romanKeyMap.put('V', 5);
         romanKeyMap.put('X', 10);
+        arabianKeyMap.put(100, "C");
+        arabianKeyMap.put(90, "XC");
+        arabianKeyMap.put(50, "L");
+        arabianKeyMap.put(40, "XL");
         arabianKeyMap.put(10, "X");
         arabianKeyMap.put(9, "IX");
         arabianKeyMap.put(5, "V");
